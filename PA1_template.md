@@ -16,7 +16,8 @@ The data requires minimal preprocessing: `NA`s are proprly represented
 in the data, so the only work we need to do is convert the `date`
 field from a String to an actual Date.
 
-```{r}
+
+```r
 data <- read.csv(unz("activity.zip", "activity.csv"))
 data$date <- as.Date(data$date, "%Y-%m-%d")
 ```
@@ -28,7 +29,8 @@ To learn about the total number of steps taken per day, we first need
 to aggregate our table so we have one row per day with two columns:
 the day and the total number of steps for that day.
 
-```{r}
+
+```r
 stepsPerDay <- aggregate(data$steps, by=list(data$date), FUN=sum, na.rm = TRUE)
 names(stepsPerDay) <- c('date', 'steps')
 ```
@@ -36,7 +38,8 @@ names(stepsPerDay) <- c('date', 'steps')
 With that in hand, we can take a quick look at the pattern with a
 histogram of steps per day.
 
-```{r}
+
+```r
 qplot(stepsPerDay$date,
       stepsPerDay$steps,
       geom = "histogram",
@@ -45,14 +48,17 @@ qplot(stepsPerDay$date,
       ylab = 'Total Steps')
 ```
 
-```{r}
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3-1.png) 
+
+
+```r
 average <- round(mean(stepsPerDay$steps), digits = 2)
 median <- round(median(stepsPerDay$steps), digits = 2)
 ```
 
 And since we have a table with steps aggregated by day, we can
-calucaulte the average number of steps per day as `r average` and the
-median number of steps per day as `r median`.
+calucaulte the average number of steps per day as 9354.23 and the
+median number of steps per day as 1.0395 &times; 10<sup>4</sup>.
 
 ## What is the average daily activity pattern?
 
@@ -60,7 +66,8 @@ To learn about trends over the course of the day, we can aggregate the
 data set on the `interval` (the 5 minute chunk of the day the
 recording is for).
 
-```{r}
+
+```r
 stepsPerInterval <- aggregate(data$steps, by=list(data$interval), FUN=mean, na.rm = TRUE)
 names(stepsPerInterval) <- c('interval', 'steps')
 ```
@@ -68,12 +75,18 @@ names(stepsPerInterval) <- c('interval', 'steps')
 We can see the rise and fall of average steps over the course of
 the day by looking at the data on a line chart.
 
-```{r}
+
+```r
 qplot(x = interval, y = steps, data = stepsPerInterval,  geom="line")
+```
+
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+
+```r
 mostActiveInterval <- stepsPerInterval[stepsPerInterval$steps == max(stepsPerInterval$steps, rm.na = TRUE), 1]
 ```
 
-And we can see that the interval with the most steps is `r mostActiveInterval`.
+And we can see that the interval with the most steps is 835.
 
 ## Imputing missing values
 
@@ -86,7 +99,8 @@ So in those cases we should use a `0` so as to remove all `NA`s from
 the data.
 
 
-```{r}
+
+```r
 library('plyr')
 
 ## if x (which will be the value of steps for that row) is NA, then use the
@@ -101,18 +115,22 @@ qplot(date,
       stat = 'identity',
       xlab = 'Date',
       ylab = 'Total Steps')
+```
 
+![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7-1.png) 
+
+```r
 imputedAverage <- round(mean(intervalAvg$plotSteps), digits = 2)
 imputedMedian <- round(median(intervalAvg$plotSteps), digits = 2)
 ```
 
-The new average is `r imputedAverage` and median is `r imputedMedian`.
+The new average is 32.48 and median is 0.
 The imputed values do not change the histogram much, but the average
 and median drop considerably.  Presumably this is because most of the
 `NA` values occured at intervals where the average number of steps was
-quite low (there are `r length(intervalAvg[is.na(intervalAvg$steps), 1])`
+quite low (there are 2304
 rows with `NA` steps and
-`r length(intervalAvg[is.na(intervalAvg$steps) & intervalAvg$plotSteps == 0, 1])`
+2304
 of those have `0` for the average number of steps for their interval).
 
 ## Are there differences in activity patterns between weekdays and weekends?
@@ -120,7 +138,8 @@ of those have `0` for the average number of steps for their interval).
 We can use the `date` field and the `weekdays` function to add a new
 `is.weekend` factor column to the data.
 
-```{r}
+
+```r
 withWeekend <- data
 is.weekend <- sapply(weekdays(withWeekend$date), function(x) x == 'Saturday' || x == 'Sunday')
 withWeekend$is.weekend <- factor(is.weekend)
@@ -129,7 +148,8 @@ withWeekend$is.weekend <- factor(is.weekend)
 We need to turn that table into a new one that groups on the
 `interval` and `is.weekend` columns and averages the `steps` one.
 
-```{r}
+
+```r
 stepsByIntervalWeekend <- aggregate(withWeekend$steps,
                                     by=list(withWeekend$interval,
                                     withWeekend$is.weekend),
@@ -142,7 +162,8 @@ Before we plot this it will be nice to convert the `is.weekend` factor
 from `TRUE` and `FALSE` to something that will look nicer on the plot
 like `Weekend` and `Weekday`.
 
-```{r}
+
+```r
 library(plyr)
 stepsByIntervalWeekend$is.weekend <-mapvalues(stepsByIntervalWeekend$is.weekend,
                                               from = c(TRUE, FALSE),
@@ -152,7 +173,8 @@ stepsByIntervalWeekend$is.weekend <-mapvalues(stepsByIntervalWeekend$is.weekend,
 Now we can plot the data, using facets in `ggplot2` to easily break
 the chart into panels.
 
-```{r}
+
+```r
 qplot(interval,
       steps,
       data = stepsByIntervalWeekend,
@@ -160,6 +182,8 @@ qplot(interval,
       facets = is.weekend ~ .,
       ylab = 'Average Steps')
 ```
+
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png) 
 
 These charts show that on weekdays the activity starts earlier in the
 day and then gets a bit calmer during the middle of the day.  While on
